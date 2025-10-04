@@ -11,14 +11,26 @@ exports.handleIVRRequest = async (req, res) => {
   digit = String(digit).trim();
 
   try {
+    // Special Case: Digit 9 to repeat the menu
+    if (digit === "9") {
+      const menu = "Press 1 for balance. 2 for recharge. 3 for last transaction. 4 for loan info. 5 for an agent. 6 to update details. 7 to cancel. 9 to repeat this menu.";
+      return res.json({
+        sessionId,
+        response: menu
+      });
+    }
+
+    const acsDigits = ["1", "2", "3", "4"];
+    const bapDigits = ["5", "6", "7"];
+
     let response;
 
-    if (digit === "1" || digit === "2") {
+    if (acsDigits.includes(digit)) {
       response = await axios.post("http://localhost:3000/acs/process", {
         sessionId,
         digit
       });
-    } else if (digit === "3") {
+    } else if (bapDigits.includes(digit)) {
       response = await axios.post("http://localhost:3000/bap/process", {
         sessionId,
         digit

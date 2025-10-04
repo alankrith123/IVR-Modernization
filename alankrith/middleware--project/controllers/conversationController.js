@@ -27,7 +27,7 @@ exports.handleConversation = async (req, res) => {
       });
     }
 
-    // Only call service if it's a valid service (acs or bap)
+    
     if (intentResult.service !== "acs" && intentResult.service !== "bap") {
       return res.json({ 
         sessionId,
@@ -37,7 +37,6 @@ exports.handleConversation = async (req, res) => {
       });
     }
 
-    // Route to appropriate service based on detected intent
     let response;
     const serviceUrl = `http://localhost:3000/${intentResult.service}/process`;
     
