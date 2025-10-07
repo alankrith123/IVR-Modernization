@@ -1,85 +1,121 @@
-/* IVR System Frontend Styles */
+/* Custom animations and states for IVR System with Tailwind CSS */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Status indicators */
+.status.ready {
+    background-color: rgb(219 234 254);
+    color: rgb(29 78 216);
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+.status.processing {
+    background-color: rgb(254 249 195);
+    color: rgb(217 119 6);
     display: flex;
+    align-items: center;
     justify-content: center;
-    align-items: center;
-    padding: 20px;
 }
 
-.container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    max-width: 400px;
-    width: 100%;
+.status.processing::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #d97706;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
-.header {
-    text-align: center;
-    margin-bottom: 30px;
+.status.error {
+    background-color: rgb(254 226 226);
+    color: rgb(185 28 28);
 }
 
-.header h1 {
-    color: #333;
-    font-size: 24px;
-    margin-bottom: 10px;
+/* Button press animation */
+.dial-button.pressed {
+    background: linear-gradient(to bottom right, rgb(74 222 128), rgb(34 197 94));
+    color: white;
+    transform: scale(0.95);
+    animation: press-animation 0.2s ease;
 }
 
-.header p {
-    color: #666;
-    font-size: 14px;
+@keyframes press-animation {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
 }
 
-.display {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    min-height: 80px;
-    border: 2px solid #e9ecef;
+/* Voice button states */
+.voice-button.recording {
+    background: linear-gradient(to bottom right, rgb(248 113 113), rgb(239 68 68));
+    animation: pulse 1.5s infinite;
 }
 
-.session-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+.voice-button.processing {
+    background: linear-gradient(to bottom right, rgb(251 191 36), rgb(251 146 60));
+    animation: processing-pulse 2s ease-in-out infinite;
 }
 
-.session-id {
-    font-size: 12px;
-    color: #6c757d;
-    background: #e9ecef;
-    padding: 4px 8px;
-    border-radius: 4px;
+.voice-button.processing::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    background: linear-gradient(145deg, rgba(251, 191, 36, 0.3), rgba(251, 146, 60, 0.3));
+    border-radius: 50%;
+    animation: shadow-pulse 2s ease-in-out infinite;
+    z-index: -1;
 }
 
-.status {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 4px;
+.voice-button.processing .voice-label {
+    opacity: 0;
+}
+
+.voice-button.processing .voice-icon {
+    animation: sandglass-flip 2s ease-in-out infinite;
+    transform-origin: center center;
+}
+
+/* Voice status states */
+.voice-status.recording {
+    color: rgb(239 68 68);
     font-weight: bold;
 }
 
-.status.ready {
-    background: #d1edff;
-    color: #0066cc;
+.voice-status.processing {
+    color: rgb(217 119 6);
+    font-weight: bold;
+}
+
+.voice-status.success {
+    color: rgb(34 197 94);
+    font-weight: bold;
+}
+
+.voice-status.error {
+    color: rgb(239 68 68);
+    font-weight: bold;
 }
 
 .status.processing {
     background: #fff3cd;
     color: #856404;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+.status.processing::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #856404;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 .status.error {
@@ -216,11 +252,31 @@ body {
 
 .voice-button.processing {
     background: linear-gradient(145deg, #ffc107, #fd7e14);
-    animation: spin 2s linear infinite;
+    animation: processing-pulse 2s ease-in-out infinite;
+    position: relative;
+    overflow: visible;
+}
+
+.voice-button.processing::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    background: linear-gradient(145deg, rgba(255, 193, 7, 0.3), rgba(253, 126, 20, 0.3));
+    border-radius: 50%;
+    animation: shadow-pulse 2s ease-in-out infinite;
+    z-index: -1;
 }
 
 .voice-button.processing .voice-label {
-    animation: counter-spin 2s linear infinite;
+    opacity: 0;
+}
+
+.voice-button.processing .voice-icon {
+    animation: sandglass-flip 2s ease-in-out infinite;
+    transform-origin: center center;
 }
 
 @keyframes pulse {
@@ -244,9 +300,70 @@ body {
     }
 }
 
+@keyframes processing-pulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+    50% { 
+        transform: scale(1.03);
+        box-shadow: 0 6px 25px rgba(255, 193, 7, 0.6);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+}
+
+@keyframes shadow-pulse {
+    0% { 
+        opacity: 0.3;
+        transform: scale(0.9);
+    }
+    50% { 
+        opacity: 0.6;
+        transform: scale(1.1);
+    }
+    100% { 
+        opacity: 0.3;
+        transform: scale(0.9);
+    }
+}
+
 @keyframes counter-spin {
     0% { transform: translateX(-50%) rotate(0deg); }
     100% { transform: translateX(-50%) rotate(-360deg); }
+}
+
+@keyframes sandglass-flip {
+    0% { 
+        transform: rotateZ(0deg) scale(1);
+        opacity: 1;
+    }
+    15% { 
+        transform: rotateZ(30deg) scale(1.1);
+        opacity: 0.9;
+    }
+    30% { 
+        transform: rotateZ(60deg) scale(1.05);
+        opacity: 0.8;
+    }
+    50% { 
+        transform: rotateZ(90deg) scale(0.95);
+        opacity: 0.7;
+    }
+    65% { 
+        transform: rotateZ(120deg) scale(1.05);
+        opacity: 0.8;
+    }
+    80% { 
+        transform: rotateZ(150deg) scale(1.1);
+        opacity: 0.9;
+    }
+    100% { 
+        transform: rotateZ(180deg) scale(1);
+        opacity: 1;
+    }
 }
 
 .voice-icon {

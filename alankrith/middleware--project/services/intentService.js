@@ -5,7 +5,22 @@ function detectIntent(query) {
   }
 
   query = query.toLowerCase();
+  console.log("Basic intent detection for:", query);
   
+  // Check for cancel action keywords FIRST (highest priority)
+  if (query.includes("cancel") || query.includes("stop") || query.includes("quit") || 
+      query.includes("exit") || query.includes("abort") || query.includes("terminate")) {
+    console.log("Detected as BAP (cancel action)");
+    return "BAP";
+  }
+
+  // Check for update details keywords (high priority)
+  if (query.includes("update") || query.includes("change") || query.includes("modify") || 
+      query.includes("edit") || query.includes("details") || query.includes("profile") ||
+      (query.includes("transaction") && (query.includes("update") || query.includes("change") || query.includes("modify")))) {
+    return "BAP";
+  }
+
   // Check for balance-related keywords
   if (query.includes("balance") || query.includes("check") || query.includes("account") || 
       query.includes("money") || query.includes("show") || query.includes("much")) {
@@ -18,8 +33,8 @@ function detectIntent(query) {
     return "ACS";
   }
   
-  // Check for last transaction keywords
-  if (query.includes("last") || query.includes("transaction") || query.includes("recent") || 
+  // Check for last transaction keywords (removed "transaction" to avoid conflict)
+  if (query.includes("last") || query.includes("recent") || 
       query.includes("history") || query.includes("previous") || query.includes("latest")) {
     return "ACS";
   }
@@ -36,17 +51,12 @@ function detectIntent(query) {
       query.includes("speak") || query.includes("connect")) {
     return "BAP";
   }
-  
-  // Check for update details keywords
-  if (query.includes("update") || query.includes("change") || query.includes("modify") || 
-      query.includes("edit") || query.includes("details") || query.includes("profile")) {
-    return "BAP";
-  }
-  
-  // Check for cancel action keywords
-  if (query.includes("cancel") || query.includes("stop") || query.includes("quit") || 
-      query.includes("exit") || query.includes("abort") || query.includes("terminate")) {
-    return "BAP";
+
+  // Check for menu-related keywords
+  if (query.includes("menu") || query.includes("option") || query.includes("choice") || 
+      query.includes("repeat") || query.includes("options") || query.includes("main") || 
+      query.includes("back") || query.includes("home") || query.includes("start")) {
+    return "MENU";
   }
   
   return "UNKNOWN";
@@ -66,7 +76,7 @@ class IntentDetector {
         digit: '2'
       },
       last_transaction: {
-        keywords: ['last', 'transaction', 'recent', 'history', 'previous', 'latest'],
+        keywords: ['last', 'recent', 'history', 'previous', 'latest'],
         service: 'acs',
         digit: '3'
       },
@@ -81,7 +91,7 @@ class IntentDetector {
         digit: '5'
       },
       update_details: {
-        keywords: ['update', 'change', 'modify', 'edit', 'details', 'profile', 'information'],
+        keywords: ['update', 'change', 'modify', 'edit', 'details', 'profile', 'information', 'transaction update'],
         service: 'bap',
         digit: '6'
       },
@@ -89,6 +99,11 @@ class IntentDetector {
         keywords: ['cancel', 'stop', 'quit', 'exit', 'abort', 'terminate'],
         service: 'bap',
         digit: '7'
+      },
+      menu_repeat: {
+        keywords: ['menu', 'option', 'choice', 'repeat', 'options', 'main', 'back', 'home', 'start'],
+        service: 'menu',
+        digit: '9'
       }
     };
   }
@@ -119,6 +134,8 @@ class IntentDetector {
       return this.determineACSIntent(query);
     } else if (simpleResult === "BAP") {
       return this.determineBAPIntent(query);
+    } else if (simpleResult === "MENU") {
+      return this.determineMenuIntent(query);
     }
 
     // Fallback to unknown
@@ -144,10 +161,10 @@ class IntentDetector {
       };
     }
     
-    // Check for last transaction keywords (but not if it's a cancel request)
-    if ((query.includes("last") || query.includes("transaction") || query.includes("recent") || 
+    // Check for last transaction keywords (removed "transaction" to avoid conflicts, exclude update/cancel)
+    if ((query.includes("last") || query.includes("recent") || 
         query.includes("history") || query.includes("previous") || query.includes("latest")) &&
-        !query.includes("cancel")) {
+        !query.includes("cancel") && !query.includes("update") && !query.includes("change") && !query.includes("modify")) {
       return { 
         intent: "last_transaction", 
         service: "acs", 
@@ -202,9 +219,10 @@ class IntentDetector {
       };
     }
     
-    // Check for update details keywords
+    // Check for update details keywords (including transaction updates)
     if (query.includes("update") || query.includes("change") || query.includes("modify") || 
-        query.includes("edit") || query.includes("details") || query.includes("profile")) {
+        query.includes("edit") || query.includes("details") || query.includes("profile") ||
+        (query.includes("transaction") && (query.includes("update") || query.includes("change") || query.includes("modify") || query.includes("edit")))) {
       return { 
         intent: "update_details", 
         service: "bap", 
@@ -218,6 +236,18 @@ class IntentDetector {
       intent: "agent_support", 
       service: "bap", 
       digit: "5", 
+      confidence: 0.85 
+    };
+  }
+
+  determineMenuIntent(query) {
+    query = query.toLowerCase();
+    
+    // All menu-related queries return the same intent
+    return { 
+      intent: "menu_repeat", 
+      service: "menu", 
+      digit: "9", 
       confidence: 0.85 
     };
   }

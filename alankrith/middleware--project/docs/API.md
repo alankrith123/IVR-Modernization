@@ -73,6 +73,7 @@ Purpose: It processes natural language queries, detects user intent, and routes 
 | `balance_inquiry`  | "check balance", "what's my balance?", "show account balance" | ACS     | Check account balance    |
 | `recharge_account` | "recharge account", "top up", "add money"                     | ACS     | Recharge account         |
 | `agent_support`    | "talk to agent", "customer support", "I need help"            | BAP     | Connect to agent/support |
+| `menu_repeat`      | "show menu", "what are my options?", "repeat menu"            | MENU    | Show menu options        |
 
 ### 3.3 cURL Example
 

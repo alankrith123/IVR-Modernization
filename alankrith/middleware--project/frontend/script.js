@@ -21,7 +21,7 @@ function setStatus(status, message) {
             statusElement.textContent = 'Ready';
             break;
         case 'processing':
-            statusElement.textContent = 'Processing...';
+            statusElement.textContent = ''; // Remove text, show only animation
             break;
         case 'error':
             statusElement.textContent = 'Error';
@@ -141,20 +141,20 @@ function startRecording() {
     try {
         recognition.start();
         
-        // Auto-stop after 10 seconds (with 4 second wait)
+        // Auto-stop after 8 seconds (faster timeout)
         recordingTimeout = setTimeout(() => {
             if (isRecording) {
                 recognition.stop();
-                updateVoiceStatus('⏳ Processing... (4 seconds wait)', 'processing');
+                updateVoiceStatus('⏳ Processing...', 'processing');
                 
-                // Wait 4 seconds before showing timeout
+                // Wait only 2 seconds before showing timeout
                 setTimeout(() => {
                     stopRecording();
                     updateVoiceStatus('⏰ No speech detected. Try again.', 'error');
-                    setTimeout(() => updateVoiceStatus('', ''), 3000);
-                }, 4000);
+                    setTimeout(() => updateVoiceStatus('', ''), 2000);
+                }, 2000);
             }
-        }, 10000);
+        }, 8000);
         
     } catch (error) {
         console.error('Error starting recognition:', error);
@@ -195,7 +195,7 @@ function updateVoiceButton(state) {
         case 'processing':
             voiceButton.classList.add('processing');
             voiceIcon.textContent = '⏳';
-            voiceLabel.textContent = 'Processing...';
+            voiceLabel.textContent = ''; // Remove text, show only animation
             break;
         default:
             voiceIcon.textContent = '🎤';
@@ -212,47 +212,42 @@ function updateVoiceStatus(message, className = '') {
 // Speech Processing
 async function processSpeechCommand(transcript) {
     updateVoiceButton('processing');
-    updateVoiceStatus('⏳ Processing... (4 seconds wait)', 'processing');
+    updateVoiceStatus('📡 Processing your request...', 'processing');
     
-    // Wait 4 seconds as requested
-    setTimeout(async () => {
-        try {
-            updateVoiceStatus('📡 Sending to conversation API...', 'processing');
-            
-            const response = await fetch(`${API_BASE}/conversation/process`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    sessionId: currentSessionId,
-                    query: transcript
-                })
-            });
+    try {
+        const response = await fetch(`${API_BASE}/conversation/process`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                sessionId: currentSessionId,
+                query: transcript
+            })
+        });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            
-            // Update display with the response
-            setStatus('ready');
-            updateResponse(`🎤 You said: "${transcript}"\n\n📋 Response: ${data.message || data.response || 'No response received'}`, false);
-            updateVoiceStatus('✅ Voice command processed successfully!', 'success');
-            
-            setTimeout(() => updateVoiceStatus('', ''), 3000);
-            
-        } catch (error) {
-            console.error('Voice command error:', error);
-            setStatus('error');
-            updateResponse(`🎤 You said: "${transcript}"\n\n❌ Error: ${error.message}`, true);
-            updateVoiceStatus('❌ Failed to process voice command', 'error');
-            setTimeout(() => updateVoiceStatus('', ''), 3000);
-        } finally {
-            updateVoiceButton('idle');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-    }, 4000);
+
+        const data = await response.json();
+        
+        // Update display with the response
+        setStatus('ready');
+        updateResponse(`🎤 You said: "${transcript}"\n\n📋 Response: ${data.message || data.response || 'No response received'}`, false);
+        updateVoiceStatus('✅ Voice command processed successfully!', 'success');
+        
+        setTimeout(() => updateVoiceStatus('', ''), 2000);
+        
+    } catch (error) {
+        console.error('Voice command error:', error);
+        setStatus('error');
+        updateResponse(`🎤 You said: "${transcript}"\n\n❌ Error: ${error.message}`, true);
+        updateVoiceStatus('❌ Failed to process voice command', 'error');
+        setTimeout(() => updateVoiceStatus('', ''), 2000);
+    } finally {
+        updateVoiceButton('idle');
+    }
 }
 
 // Initialize App
