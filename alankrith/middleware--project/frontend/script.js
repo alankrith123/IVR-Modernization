@@ -3,16 +3,152 @@
 let currentSessionId = generateSessionId();
 const API_BASE = 'http://localhost:3000';
 
-// Session Management
+// Text-to-Speech settings
+let speechEnabled = true;
+let speechSynthesis = window.speechSynthesis;
+let selectedFemaleVoice = null;
+
+// Initialize voices when page loads
+function initializeVoices() {
+    if (speechSynthesis) {
+        // Load voices and select a female voice
+        const voices = speechSynthesis.getVoices();
+        
+        if (voices.length === 0) {
+            // Voices not loaded yet, wait for them
+            speechSynthesis.onvoiceschanged = function() {
+                selectFemaleVoice();
+            };
+        } else {
+            selectFemaleVoice();
+        }
+    }
+}
+
+function selectFemaleVoice() {
+    const voices = speechSynthesis.getVoices();
+    
+    const preferredFemaleVoices = [
+        'Microsoft Zira Desktop - English (United States)',
+        'Microsoft Hazel Desktop - English (Great Britain)', 
+        'Google UK English Female',
+        'Google US English Female',
+        'Microsoft Ana - English (United States)',
+        'Microsoft Eva - English (United States)',
+        'Microsoft Aria Online (Natural) - English (United States)',
+        'Microsoft Jenny Online (Natural) - English (United States)'
+    ];
+    
+    for (const voiceName of preferredFemaleVoices) {
+        selectedFemaleVoice = voices.find(voice => voice.name === voiceName);
+        if (selectedFemaleVoice) {
+            console.log('Selected female voice:', selectedFemaleVoice.name);
+            return;
+        }
+    }
+    
+    selectedFemaleVoice = voices.find(voice => 
+        voice.lang.includes('en') && 
+        (voice.name.toLowerCase().includes('female') || 
+         voice.name.toLowerCase().includes('zira') ||
+         voice.name.toLowerCase().includes('hazel') ||
+         voice.name.toLowerCase().includes('ana') ||
+         voice.name.toLowerCase().includes('eva') ||
+         voice.name.toLowerCase().includes('aria') ||
+         voice.name.toLowerCase().includes('jenny'))
+    );
+    
+    if (!selectedFemaleVoice) {
+        selectedFemaleVoice = voices.find(voice => voice.lang.includes('en'));
+    }
+    
+    if (selectedFemaleVoice) {
+        console.log('✅ Selected voice:', selectedFemaleVoice.name);
+        setTimeout(() => showAvailableVoices(), 1000);
+    } else {
+        console.log('❌ No suitable voice found, will use default');
+        setTimeout(() => showAvailableVoices(), 1000);
+    }
+}
+
 function generateSessionId() {
     return 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
+
+function speakResponse(text) {
+    if (!speechEnabled || !speechSynthesis) {
+        console.log('Text-to-speech is disabled or not supported');
+        return;
+    }
+
+    speechSynthesis.cancel();
+    
+    let cleanText = text
+        .replace(/🎤.*?:/g, '')
+        .replace(/📋.*?:/g, '') 
+        .replace(/[🎤📋✅❌⏳📡🔴]/g, '')
+        .replace(/\n+/g, ' ') 
+        .trim();
+    
+    const responseMatch = cleanText.match(/Response:\s*(.+)/i);
+    if (responseMatch) {
+        cleanText = responseMatch[1].trim();
+    }
+    
+    if (cleanText) {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        const voices = speechSynthesis.getVoices();
+        const ariaVoice = voices.find(voice => voice.name.includes('Microsoft Aria'));
+        if (ariaVoice) utterance.voice = ariaVoice;
+        
+        utterance.onstart = function() {
+            console.log('Started speaking response');
+            updateVoiceStatus('🔊 Speaking response...', 'speaking');
+        };
+        
+        utterance.onend = function() {
+            console.log('Finished speaking response');
+            updateVoiceStatus('', '');
+        };
+        
+        utterance.onerror = function(event) {
+            console.error('Speech synthesis error:', event);
+            updateVoiceStatus('', '');
+        };
+        
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function toggleSpeech() {
+    speechEnabled = !speechEnabled;
+    const speechToggle = document.getElementById('speechToggle');
+    if (speechToggle) {
+        speechToggle.textContent = speechEnabled ? '🔊' : '🔇';
+        speechToggle.title = speechEnabled ? 'Disable text-to-speech' : 'Enable text-to-speech';
+    }
+    console.log('Text-to-speech', speechEnabled ? 'enabled' : 'disabled');
+}
+
+function showAvailableVoices() {
+    const voices = speechSynthesis.getVoices();
+    console.log('🎤 All available voices:');
+    voices.forEach((voice, index) => {
+        console.log(`${index + 1}. ${voice.name} (${voice.lang}) - ${voice.gender || 'unknown gender'}`);
+    });
+    
+    if (selectedFemaleVoice) {
+        console.log('🎤 Currently selected voice:', selectedFemaleVoice.name);
+    } else {
+        console.log('🎤 No voice specifically selected, using system default');
+    }
 }
 
 function updateSessionDisplay() {
     document.getElementById('sessionId').textContent = `Session: ${currentSessionId.split('-')[1]}`;
 }
 
-// Status Management
 function setStatus(status, message) {
     const statusElement = document.getElementById('status');
     statusElement.className = `status ${status}`;
@@ -21,7 +157,7 @@ function setStatus(status, message) {
             statusElement.textContent = 'Ready';
             break;
         case 'processing':
-            statusElement.textContent = ''; // Remove text, show only animation
+            statusElement.textContent = ''; 
             break;
         case 'error':
             statusElement.textContent = 'Error';
@@ -141,13 +277,11 @@ function startRecording() {
     try {
         recognition.start();
         
-        // Auto-stop after 8 seconds (faster timeout)
         recordingTimeout = setTimeout(() => {
             if (isRecording) {
                 recognition.stop();
                 updateVoiceStatus('⏳ Processing...', 'processing');
                 
-                // Wait only 2 seconds before showing timeout
                 setTimeout(() => {
                     stopRecording();
                     updateVoiceStatus('⏰ No speech detected. Try again.', 'error');
@@ -233,9 +367,17 @@ async function processSpeechCommand(transcript) {
         const data = await response.json();
         
         // Update display with the response
+        const responseText = data.message || data.response || 'No response received';
+        const fullResponse = `🎤 You said: "${transcript}"\n\n📋 Response: ${responseText}`;
+        
         setStatus('ready');
-        updateResponse(`🎤 You said: "${transcript}"\n\n📋 Response: ${data.message || data.response || 'No response received'}`, false);
+        updateResponse(fullResponse, false);
         updateVoiceStatus('✅ Voice command processed successfully!', 'success');
+        
+        // Speak the response automatically after voice input
+        setTimeout(() => {
+            speakResponse(responseText);
+        }, 500); // Small delay to let the success message show first
         
         setTimeout(() => updateVoiceStatus('', ''), 2000);
         
@@ -254,15 +396,14 @@ async function processSpeechCommand(transcript) {
 document.addEventListener('DOMContentLoaded', function() {
     updateSessionDisplay();
     initializeSpeechRecognition();
+    initializeVoices(); // Initialize text-to-speech voices
     
-    // Add click event listeners to all dial buttons
     const dialButtons = document.querySelectorAll('.dial-button');
     dialButtons.forEach(button => {
         const digit = button.getAttribute('data-digit');
         button.addEventListener('click', () => callIVR(digit));
     });
 
-    // Add keyboard support
     document.addEventListener('keydown', function(event) {
         const digit = event.key;
         if (digit >= '1' && digit <= '9') {
