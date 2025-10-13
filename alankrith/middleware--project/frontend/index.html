@@ -83,10 +83,16 @@
 
         <!-- Voice Command Section -->
         <div class="text-center mb-6">
-            <button class="voice-button relative w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-green-300/50" id="voiceButton" onclick="toggleVoiceRecording()">
-                <div class="voice-icon text-2xl mb-1" id="voiceIcon">🎤</div>
-                <div class="voice-label text-xs font-semibold absolute bottom-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap" id="voiceLabel">Voice Command</div>
-            </button>
+            <div class="flex justify-center items-center gap-4">
+                <button class="voice-button relative w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-green-300/50" id="voiceButton" onclick="toggleVoiceRecording()">
+                    <div class="voice-icon text-2xl mb-1" id="voiceIcon">🎤</div>
+                    <div class="voice-label text-xs font-semibold absolute bottom-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap" id="voiceLabel">Voice Command</div>
+                </button>
+                
+                <button class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-blue-300/50 text-xl" id="speechToggle" onclick="toggleSpeech()" title="Toggle text-to-speech">
+                    🔊
+                </button>
+            </div>
             <div class="voice-status text-xs text-gray-600 mt-3 min-h-[20px]" id="voiceStatus"></div>
         </div>
 
